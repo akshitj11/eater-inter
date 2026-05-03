@@ -1,0 +1,11 @@
+{
+  "name": "Bawarchii",
+  "short_name": "Bawarchii",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#FFFCF8",
+  "theme_color": "#FF7A1A",
+  "description": "QR table ordering for Bawarchii",
+  "orientation": "portrait-primary",
+  "icons": []
+}
