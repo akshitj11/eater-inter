@@ -9,6 +9,9 @@ flutter pub get
 flutter run -d chrome --dart-define=EATER_API_BASE_URL=http://localhost:8000/api/eater
 ```
 
+`EATER_API_BASE_URL` defaults to `http://localhost:8000/api/eater`, so the
+dart-define is only needed when pointing the eater interface at another backend.
+
 The app reads the QR table token from the URL:
 
 ```text

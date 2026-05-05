@@ -1,9 +1,8 @@
 class AppConfig {
   static const String apiBaseUrl = String.fromEnvironment(
-    'BAWARCHI_CLOUD_URL',
-    defaultValue: 'http://localhost:8080',
+    'EATER_API_BASE_URL',
+    defaultValue: 'http://localhost:8000/api/eater',
   );
-
 
   static const restaurantName = String.fromEnvironment(
     'RESTAURANT_NAME',
