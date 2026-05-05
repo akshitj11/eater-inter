@@ -92,7 +92,9 @@ class _MenuScreenState extends State<MenuScreen> {
     final query = _searchController.text.trim().toLowerCase();
     return menu.items.where((item) {
       final matchesCategory =
-          _selectedCategoryId == null || item.categoryId == _selectedCategoryId;
+          query.isNotEmpty ||
+          _selectedCategoryId == null ||
+          item.categoryId == _selectedCategoryId;
       final matchesSearch =
           query.isEmpty || item.name.toLowerCase().contains(query);
       return matchesCategory && matchesSearch;
