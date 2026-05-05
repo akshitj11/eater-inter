@@ -113,12 +113,16 @@ class PaymentSession {
     required this.amount,
     required this.paymentLink,
     required this.idempotencyKey,
+    required this.provider,
+    required this.demo,
   });
 
   final String paymentId;
   final double amount;
   final String paymentLink;
   final String idempotencyKey;
+  final String provider;
+  final bool demo;
 
   factory PaymentSession.fromJson(Map<String, dynamic> json) {
     return PaymentSession(
@@ -126,6 +130,8 @@ class PaymentSession {
       amount: _asDouble(json['amount']),
       paymentLink: json['payment_link'] as String? ?? '',
       idempotencyKey: json['idempotency_key'] as String,
+      provider: json['provider'] as String? ?? 'demo',
+      demo: json['demo'] as bool? ?? true,
     );
   }
 }

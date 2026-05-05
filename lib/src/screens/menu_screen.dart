@@ -163,17 +163,42 @@ class _MenuScreenState extends State<MenuScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Demo checkout: payment verification is simulated.'),
-        ),
-      );
       if (session.paymentLink.isNotEmpty) {
         await launchUrl(
           Uri.parse(session.paymentLink),
           mode: LaunchMode.externalApplication,
         );
       }
+      if (!session.demo) {
+        if (!mounted) {
+          return;
+        }
+        await showDialog<void>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Complete payment'),
+            content: Text(
+              'Complete payment with ${session.provider}, then return here. '
+              'Your order will appear after gateway confirmation.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Demo checkout: payment verification is simulated.'),
+        ),
+      );
       final verified = await _api.verifyPayment(
         paymentId: session.paymentId,
         gatewayReference: 'client-demo',
