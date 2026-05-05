@@ -30,3 +30,10 @@ This app is built against the existing `bawarchi-cloud` eater routes:
 - `GET /orders?phone=...`
 
 No `bawarchi-cloud` route or database schema changes are required for the current implementation.
+
+## Demo Payment Boundary
+
+The app creates a payment session through the backend, opens the returned payment
+link when present, then calls `/payment/verify` with a `client-demo` gateway
+reference. Treat this as a demo verification boundary until a real payment
+gateway callback or server-side verification flow is connected.

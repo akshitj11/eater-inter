@@ -34,6 +34,7 @@ class _MenuScreenState extends State<MenuScreen> {
   String? _error;
   bool _loading = true;
   bool _listening = false;
+  bool _checkoutInProgress = false;
 
   @override
   void initState() {
@@ -118,9 +119,10 @@ class _MenuScreenState extends State<MenuScreen> {
 
   Future<void> _checkout() async {
     final token = _tableToken;
-    if (token == null || _cart.isEmpty) {
+    if (token == null || _cart.isEmpty || _checkoutInProgress) {
       return;
     }
+    setState(() => _checkoutInProgress = true);
     final result = await showModalBottomSheet<_CheckoutResult>(
       context: context,
       isScrollControlled: true,
@@ -133,10 +135,22 @@ class _MenuScreenState extends State<MenuScreen> {
       },
     );
     if (result == null) {
+      if (mounted) {
+        setState(() => _checkoutInProgress = false);
+      }
       return;
     }
     try {
-      await _api.validateCart(tableToken: token, lines: _cart.lines);
+      final validatedCart = await _api.validateCart(
+        tableToken: token,
+        lines: _cart.lines,
+      );
+      if (!validatedCart.valid) {
+        throw const EaterApiException(
+          'Some cart items are unavailable. Please update your cart.',
+          409,
+        );
+      }
       final session = await _api.initiatePayment(
         tableToken: token,
         phoneNumber: result.phone,
@@ -144,6 +158,14 @@ class _MenuScreenState extends State<MenuScreen> {
         idempotencyKey: const Uuid().v4(),
       );
       await _phoneStore.savePhone(result.phone);
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Demo checkout: payment verification is simulated.'),
+        ),
+      );
       if (session.paymentLink.isNotEmpty) {
         await launchUrl(
           Uri.parse(session.paymentLink),
@@ -175,6 +197,10 @@ class _MenuScreenState extends State<MenuScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(error.toString())),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _checkoutInProgress = false);
+      }
     }
   }
 
@@ -187,7 +213,11 @@ class _MenuScreenState extends State<MenuScreen> {
           bottomNavigationBar: _cart.isEmpty
               ? null
               : SafeArea(
-                  child: _CheckoutBar(cart: _cart, onCheckout: _checkout),
+                  child: _CheckoutBar(
+                    cart: _cart,
+                    loading: _checkoutInProgress,
+                    onCheckout: _checkout,
+                  ),
                 ),
           body: SafeArea(
             child: _loading
@@ -495,9 +525,14 @@ class _CartPill extends StatelessWidget {
 }
 
 class _CheckoutBar extends StatelessWidget {
-  const _CheckoutBar({required this.cart, required this.onCheckout});
+  const _CheckoutBar({
+    required this.cart,
+    required this.loading,
+    required this.onCheckout,
+  });
 
   final CartController cart;
+  final bool loading;
   final VoidCallback onCheckout;
 
   @override
@@ -528,12 +563,17 @@ class _CheckoutBar extends StatelessWidget {
             ),
           ),
           FilledButton(
-            onPressed: onCheckout,
+            onPressed: loading ? null : onCheckout,
             style: FilledButton.styleFrom(
               minimumSize: const Size(128, 48),
               backgroundColor: AppTheme.saffron,
             ),
-            child: const Text('Pay now'),
+            child: loading
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Pay now'),
           ),
         ],
       ),
@@ -606,6 +646,11 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
               labelText: 'Phone number',
               prefixIcon: Icon(Icons.call_rounded),
             ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Demo mode: payment verification is simulated by this app after a payment session is created.',
+            style: TextStyle(color: AppTheme.muted),
           ),
           const SizedBox(height: 10),
           CheckboxListTile(
