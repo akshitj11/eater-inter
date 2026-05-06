@@ -159,6 +159,28 @@ class VerifyPaymentResponse {
   }
 }
 
+class PaymentStatus {
+  const PaymentStatus({
+    required this.paymentId,
+    required this.status,
+    required this.orderId,
+  });
+
+  final String paymentId;
+  final String status;
+  final String? orderId;
+
+  bool get isPaid => status.toLowerCase().trim() == 'paid';
+
+  factory PaymentStatus.fromJson(Map<String, dynamic> json) {
+    return PaymentStatus(
+      paymentId: json['payment_id'] as String,
+      status: json['status'] as String? ?? 'pending',
+      orderId: json['order_id'] as String?,
+    );
+  }
+}
+
 class OrderDetail {
   const OrderDetail({
     required this.id,

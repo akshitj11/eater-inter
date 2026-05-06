@@ -69,6 +69,11 @@ class EaterApi {
     return VerifyPaymentResponse.fromJson(_decode(response));
   }
 
+  Future<PaymentStatus> getPaymentStatus(String paymentId) async {
+    final response = await _client.get(_uri('/payment/status/$paymentId'));
+    return PaymentStatus.fromJson(_decode(response));
+  }
+
   Future<OrderDetail> getOrder(String orderId) async {
     final response = await _client.get(_uri('/orders/$orderId'));
     return OrderDetail.fromJson(_decode(response));

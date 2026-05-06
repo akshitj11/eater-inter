@@ -91,8 +91,7 @@ class _MenuScreenState extends State<MenuScreen> {
     }
     final query = _searchController.text.trim().toLowerCase();
     return menu.items.where((item) {
-      final matchesCategory =
-          query.isNotEmpty ||
+      final matchesCategory = query.isNotEmpty ||
           _selectedCategoryId == null ||
           item.categoryId == _selectedCategoryId;
       final matchesSearch =
@@ -173,20 +172,35 @@ class _MenuScreenState extends State<MenuScreen> {
         if (!mounted) {
           return;
         }
-        await showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Complete payment'),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
             content: Text(
-              'Complete payment with ${session.provider}, then return here. '
-              'Your order will appear after gateway confirmation.',
+              'Complete payment with ${session.provider}. Waiting for confirmation.',
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
+          ),
+        );
+        final status = await _waitForPaymentConfirmation(session.paymentId);
+        if (!mounted) {
+          return;
+        }
+        if (status?.orderId == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content:
+                  Text('Payment is still pending. Please check again soon.'),
+            ),
+          );
+          return;
+        }
+        _cart.clear();
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => OrderStatusScreen(
+              api: _api,
+              orderId: status!.orderId!,
+              initialStatus: 'preparing',
+              readyAlertService: ReadyAlertService(),
+            ),
           ),
         );
         return;
@@ -229,6 +243,17 @@ class _MenuScreenState extends State<MenuScreen> {
         setState(() => _checkoutInProgress = false);
       }
     }
+  }
+
+  Future<PaymentStatus?> _waitForPaymentConfirmation(String paymentId) async {
+    for (var attempt = 0; attempt < 45; attempt += 1) {
+      final status = await _api.getPaymentStatus(paymentId);
+      if (status.isPaid && status.orderId != null) {
+        return status;
+      }
+      await Future<void>.delayed(const Duration(seconds: 2));
+    }
+    return null;
   }
 
   @override
@@ -392,7 +417,8 @@ class _MenuContent extends StatelessWidget {
                   onRemove: () => cart.remove(item),
                 );
               },
-              childCount: visibleItems.isEmpty ? 0 : visibleItems.length * 2 - 1,
+              childCount:
+                  visibleItems.isEmpty ? 0 : visibleItems.length * 2 - 1,
             ),
           ),
         ),
