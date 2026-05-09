@@ -13,11 +13,20 @@ class CartController extends ChangeNotifier {
   int quantityFor(MenuItem item) => _lines[item.id]?.quantity ?? 0;
 
   void add(MenuItem item) {
+    addQuantity(item, 1);
+  }
+
+  void addQuantity(MenuItem item, int quantity) {
+    if (quantity <= 0) {
+      return;
+    }
     final existing = _lines[item.id];
     if (existing == null) {
-      _lines[item.id] = CartLine(item: item, quantity: 1);
+      _lines[item.id] = CartLine(item: item, quantity: quantity);
     } else {
-      _lines[item.id] = existing.copyWith(quantity: existing.quantity + 1);
+      _lines[item.id] = existing.copyWith(
+        quantity: existing.quantity + quantity,
+      );
     }
     notifyListeners();
   }

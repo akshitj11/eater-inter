@@ -11,6 +11,7 @@ import '../eater_api.dart';
 import '../models.dart';
 import '../services/phone_store.dart';
 import '../services/ready_alert_service.dart';
+import '../services/voice_cart_parser.dart';
 import '../services/voice_order_service.dart';
 import 'order_status_screen.dart';
 
@@ -25,6 +26,7 @@ class _MenuScreenState extends State<MenuScreen> {
   final _api = EaterApi();
   final _cart = CartController();
   final _voice = VoiceOrderService();
+  final _voiceParser = const VoiceCartParser();
   final _phoneStore = PhoneStore();
   final _searchController = TextEditingController();
 
@@ -104,11 +106,7 @@ class _MenuScreenState extends State<MenuScreen> {
     setState(() => _listening = true);
     await _voice.listen(
       onWords: (words) {
-        _searchController.text = words;
-        _searchController.selection = TextSelection.fromPosition(
-          TextPosition(offset: words.length),
-        );
-        setState(() {});
+        _handleVoiceWords(words);
       },
       onDone: () {
         if (mounted) {
@@ -116,6 +114,34 @@ class _MenuScreenState extends State<MenuScreen> {
         }
       },
     );
+  }
+
+  void _handleVoiceWords(String words) {
+    final menu = _menu;
+    if (menu == null) {
+      return;
+    }
+    final result = _voiceParser.parse(words, menu.items);
+    if (result.hasCommand) {
+      final command = result.command!;
+      _cart.addQuantity(command.item, command.quantity);
+      _searchController.clear();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Added ${command.quantity} x ${command.item.name}'),
+        ),
+      );
+      setState(() {});
+      return;
+    }
+    _searchController.text = result.searchText;
+    _searchController.selection = TextSelection.fromPosition(
+      TextPosition(offset: result.searchText.length),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(result.message)),
+    );
+    setState(() {});
   }
 
   Future<void> _checkout() async {

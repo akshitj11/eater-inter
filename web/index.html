@@ -11,6 +11,39 @@
     <link rel="manifest" href="manifest.json" />
   </head>
   <body>
+    <script>
+      window.bawarchiiAlerts = {
+        requestPermission: async function () {
+          if (!("Notification" in window)) return "unsupported";
+          if (Notification.permission === "granted") return "granted";
+          if (Notification.permission === "denied") return "denied";
+          return await Notification.requestPermission();
+        },
+        notifyReady: function () {
+          if ("Notification" in window && Notification.permission === "granted") {
+            new Notification("Your order is ready", {
+              body: "Please collect your order.",
+            });
+          }
+        },
+        playReadySound: function () {
+          try {
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = context.createOscillator();
+            const gain = context.createGain();
+            oscillator.type = "sine";
+            oscillator.frequency.setValueAtTime(880, context.currentTime);
+            gain.gain.setValueAtTime(0.0001, context.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.25, context.currentTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.7);
+            oscillator.connect(gain);
+            gain.connect(context.destination);
+            oscillator.start();
+            oscillator.stop(context.currentTime + 0.75);
+          } catch (_) {}
+        },
+      };
+    </script>
     <script src="flutter_bootstrap.js" async></script>
   </body>
 </html>

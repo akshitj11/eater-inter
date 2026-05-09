@@ -30,6 +30,7 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
   OrderDetail? _order;
   String? _error;
   bool _buzzed = false;
+  bool _alertsEnabled = false;
 
   @override
   void initState() {
@@ -70,6 +71,23 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
         setState(() => _error = error.toString());
       }
     }
+  }
+
+  Future<void> _enableAlerts() async {
+    final enabled = await widget.readyAlertService.enableAlerts();
+    if (!mounted) {
+      return;
+    }
+    setState(() => _alertsEnabled = enabled);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          enabled
+              ? 'Alerts enabled. Keep this page open.'
+              : 'Notifications are not available. Keep this page open for buzz alerts.',
+        ),
+      ),
+    );
   }
 
   @override
@@ -128,6 +146,32 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
                   style: const TextStyle(color: AppTheme.chili),
                 ),
               ],
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: AppTheme.line),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Keep this page open. We will buzz and notify you when your order is ready.',
+                      style: TextStyle(color: AppTheme.muted),
+                    ),
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: _alertsEnabled ? null : _enableAlerts,
+                      icon: const Icon(Icons.notifications_active_rounded),
+                      label: Text(
+                        _alertsEnabled ? 'Alerts enabled' : 'Enable alerts',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 18),
               Text(
                 'Items',
@@ -153,7 +197,8 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
                 ),
               ),
               FilledButton(
-                onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+                onPressed: () =>
+                    Navigator.of(context).popUntil((route) => route.isFirst),
                 child: const Text('Back to menu'),
               ),
             ],
